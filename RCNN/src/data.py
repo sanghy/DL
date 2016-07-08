@@ -31,7 +31,7 @@ def load_data():
 
 
 def load_datatest():
-    data = np.empty((100,50,200,3),dtype="float32")
+    data = np.empty((100,1,50,200),dtype="float32")
     label = np.empty((100,),np.str_)
     testfolder="/home/sanghy/Data/DL/train-tow"
     imgs = os.listdir(testfolder)
@@ -39,9 +39,10 @@ def load_datatest():
     for i in range(num):
         if (i >= 100):
             break
-        img = Image.open(testfolder+"/"+imgs[i])
+        rgbImage=Image.open(testfolder+"/"+imgs[i])
+        img = rgbImage.convert("L")
         arr = np.asarray(img,dtype="float32")
         data[i,:,:,:] = arr
-        label[i] = str(imgs[i].split('.')[0].split('_')[0])
-        # print(str(imgs[i].split('.')[0].split('_')[0]))
+        label[i] = str(imgs[i].split('_')[1].split('.')[0])
+        #print(str(imgs[i].split('_')[1].split('.')[0]))
     return data,label

@@ -12,12 +12,16 @@ from keras.models import Sequential
 # from keras.initializations import norRemal, identity
 from keras.layers.recurrent import SimpleRNN, LSTM, GRU
 from keras.optimizers import RMSprop, Adadelta
-from keras.layers.convolutional import Convolution2D,MaxPooling2D
+from keras.layers.convolutional import Convolution1D,MaxPooling1D
 from keras.layers.core import Dense, Activation, TimeDistributedDense, Dropout, Reshape, Flatten
 from keras.layers import Embedding
 from keras.layers.wrappers import TimeDistributed
 from keras.models import model_from_json
 from data import load_data,load_datatest
+import sys
+import numpy
+import vocabulary as vocabulary
+
 
 # import json
 
@@ -34,6 +38,7 @@ size = 28
 
 # the data, shuffled and split between train and test sets
 (X_train_raw, y_train_temp)=load_datatest()
+#print(y_train_temp)
 (X_test_raw, y_test_temp) = load_datatest()
 
 # basic image processing
@@ -47,37 +52,31 @@ print(X_train_raw.shape[0], 'train samples')
 print(X_test_raw.shape[0], 'test samples')
 print("Building model")
 
+
+# Embedding
+max_features = 20000
+maxlen = 100
+embedding_size = 128
+
+# Convolution
+filter_length = 3
+nb_filter = 64
+pool_length = 2
+
+
 # define our time-distributed setup
 model = Sequential()
-model.add(Convolution2D(64,7,7,border_mode='valid',input_shape=(1,50,200)))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2,2)))
-model.add(Convolution2D(128,5,5))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2,2)))
-model.add(Convolution2D(256,3,3))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Embedding(max_features, embedding_size, input_length=maxlen))
+model.add(Dropout(0.25))
+model.add(Convolution1D(nb_filter=nb_filter,
+                        filter_length=filter_length,
+                        border_mode='valid',
+                        activation='relu',
+                        subsample_length=1))
+model.add(MaxPooling1D(pool_length=pool_length))
 
-
-
-# model.add(TimeDistributed(Convolution2D(32, 4, 4, border_mode='valid'), input_shape=(maxToAdd, 3, 200, 50)))
-# model.add(Activation('relu'))
-# model.add(TimeDistributed(Convolution2D(64, 4, 4, border_mode='valid')))
-# model.add(Activation('relu'))
-# model.add(TimeDistributed(Convolution2D(128, 4, 4, border_mode='valid')))
-# model.add(Activation('relu'))
-
-model.add(Flatten())
-model.add(Dense(512))
-model.add(Activation('softmax'))
-model.add(Dropout(.2))
-
-print("sang sang sang sang")
-
-
-model.add(GRU(164, return_sequences=True ))
-model.add(GRU(82, return_sequences=False))
+model.add(SimpleRNN(164, return_sequences=True))
+model.add(SimpleRNN(82, return_sequences=False))
 model.add(Dropout(.2))
 model.add(Dense(1))
 
@@ -91,11 +90,11 @@ for ep in range(0, nb_epochs):
     X_test = []
     y_test = []
 
-    X_train = np.zeros((examplesPer, maxToAdd, 50, 200, 3))
+    X_train = np.zeros((examplesPer, maxToAdd,1, 50,200))
 
     for i in range(0, examplesPer):
         # initialize a training example of max_num_time_steps,im_size,im_size
-        output = np.zeros((maxToAdd, 50, 200, 3))
+        output = np.zeros((maxToAdd, 1, 50,200))
         # decide how many MNIST images to put in that tensor
         numToAdd = np.ceil(np.random.rand() * maxToAdd)
         # sample that many images
@@ -105,7 +104,14 @@ for ep in range(0, nb_epochs):
         exampleY = y_train_temp[indices]
         output[0:numToAdd, 0, :, :] = example
         X_train[i, :, :, :, :] = output
-        y_train.append(np.sum(exampleY))
+        for s in range(len(y_train_temp)) :
+            caption_char = y_train_temp[s]
+            caption_ids = numpy.zeros(9, dtype=numpy.int32)
+
+            for j, char in enumerate(caption_char):
+                CHAR_VOCABULARY, CHARS = vocabulary.GetCharacterVocabulary(sys.argv[2])
+                caption_ids[j] = CHAR_VOCABULARY[char]
+            y_train.append(np.sum(exampleY))
 
     y_train = np.array(y_train)
 
