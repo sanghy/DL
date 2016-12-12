@@ -1,4 +1,3 @@
-#coding:utf-8
 '''
 Basic demonstration of the capabilities of the CRNN using TimeDistributed layers
 Processes an MNIST image (or blank square) at each time step and sums the digits.
@@ -34,8 +33,7 @@ hidden_units = 200
 size = 28
 
 # the data, shuffled and split between train and test sets
-(X_train_raw, y_train_temp)=load_datatest()
-(X_test_raw, y_test_temp) = load_datatest()
+(X_train_raw, y_train_temp), (X_test_raw, y_test_temp) = mnist.load_data()
 
 # basic image processing
 X_train_raw = X_train_raw.astype('float32')
@@ -50,7 +48,7 @@ print("Building model")
 
 # define our time-distributed setup
 model = Sequential()
-# model.add(Convolution2D(64,7,7,border_mode='valid',input_shape=(1,50,200)))
+# model.add(Convolution2D(64,7,7,border_mode='valid',input_shape=(1,size,size)))
 # model.add(Activation('relu'))
 # model.add(MaxPooling2D(pool_size=(2,2)))
 # model.add(Convolution2D(128,5,5))
@@ -59,14 +57,15 @@ model = Sequential()
 # model.add(Convolution2D(256,3,3))
 # model.add(Activation('relu'))
 # model.add(MaxPooling2D(pool_size=(2,2)))
-#
+
+
 # model.add(Flatten())
 # model.add(Dense(512))
 # model.add(Activation('softmax'))
 # model.add(Dropout(.2))
 
 
-model.add(TimeDistributed(Convolution2D(32, 4, 4, border_mode='valid'), input_shape=(maxToAdd, 1, 50, 200)))
+model.add(TimeDistributed(Convolution2D(32, 4, 4, border_mode='valid'), input_shape=(maxToAdd, 1, size, size)))
 model.add(Activation('relu'))
 model.add(TimeDistributed(Convolution2D(64, 4, 4, border_mode='valid')))
 model.add(Activation('relu'))
@@ -94,39 +93,30 @@ for ep in range(0, nb_epochs):
     X_test = []
     y_test = []
 
+    X_train = np.zeros((examplesPer, maxToAdd, 1, size, size))
 
-    # X_train=X_train_raw
-    # y_train=y_train_temp
-    # X_test=X_test_raw
-    # y_test=y_test_temp
-
-    X_train = np.zeros((examplesPer, maxToAdd, 1, 50, 200))
-    y_train=np.zeros((examplesPer,maxToAdd,5))
     for i in range(0, examplesPer):
         # initialize a training example of max_num_time_steps,im_size,im_size
-        output = np.zeros((maxToAdd,1, 50, 200))
-        target=np.zeros((maxToAdd,5))
-
+        output = np.zeros((maxToAdd, 1, size, size))
         # decide how many MNIST images to put in that tensor
         numToAdd = np.ceil(np.random.rand() * maxToAdd)
         # sample that many images
         indices = np.random.choice(X_train_raw.shape[0], size=numToAdd)
-
         example = X_train_raw[indices]
-        tar=y_train_temp[indices]
-        print(tar)
-        # exampleY = y_train_temp[indices]
-        output[0:numToAdd, :, :, :] = example
-        target[0:numToAdd,:5] = tar
+        # sum up the outputs for new output
+        exampleY = y_train_temp[indices]
+        output[0:numToAdd, 0, :, :] = example
         X_train[i, :, :, :, :] = output
-        y_train[i,:,:]=target
+        y_train.append(np.sum(exampleY))
+
     y_train = np.array(y_train)
 
     if ep == 0:
         print("X_train shape: ", X_train.shape)
         print("y_train shape: ", y_train.shape)
 
-    model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=1,verbose=1)
+    model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=1,
+              verbose=1)
 
 # Test the model
 X_test = np.zeros((examplesPer, maxToAdd, 1, size, size))

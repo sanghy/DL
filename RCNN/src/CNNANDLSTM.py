@@ -11,7 +11,7 @@ from keras.layers.core import Dense, Activation, TimeDistributedDense, Dropout, 
 from keras.layers import Embedding
 from keras.layers.wrappers import TimeDistributed
 from keras.models import model_from_json
-from data import load_data,load_datatest
+from data import load_data,load_datateststr
 import vocabulary as vocabulary
 import numpy
 import sys
@@ -48,7 +48,7 @@ image_model.add(Dense(128))
 language_model = Sequential()
 language_model.add(Embedding(vocab_size, 256, input_length=max_caption_len))
 language_model.add(GRU(output_dim=128, return_sequences=True))
-language_model.add(Dense(128))
+# language_model.add(Dense(128))
 
 # let's repeat the image vector to turn it into a sequence.
 image_model.add(RepeatVector(max_caption_len))
@@ -67,8 +67,8 @@ model.add(Activation('softmax'))
 model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
 
 
-(X_train_raw, y_train_temp)=load_datatest()
-(X_test_raw, y_test_temp) = load_datatest()
+(X_train_raw, y_train_temp)=load_datateststr()
+(X_test_raw, y_test_temp) = load_datateststr()
 partial_captions=numpy.zeros(len(y_train_temp),dtype=numpy.int32)
 next_words=numpy.zeros(len(X_train_raw),dtype=numpy.float)
 for i in y_test_temp:

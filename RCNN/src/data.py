@@ -8,6 +8,8 @@ file:data.py
 import os
 from PIL import Image
 import numpy as np
+import sys
+import vocabulary
 
 def load_data():
     data = np.empty((200000,3,200,50),dtype="float32")
@@ -32,7 +34,7 @@ def load_data():
 
 def load_datatest():
     data = np.empty((100,1,50,200),dtype="float32")
-    label = np.empty((100,),np.str_)
+    label = [] #np.empty((100,),dtype=np.str_)
     testfolder="/home/sanghy/Data/DL/train-tow"
     imgs = os.listdir(testfolder)
     num = len(imgs)
@@ -43,6 +45,38 @@ def load_datatest():
         img = rgbImage.convert("L")
         arr = np.asarray(img,dtype="float32")
         data[i,:,:,:] = arr
-        label[i] = str(imgs[i].split('_')[1].split('.')[0])
-        #print(str(imgs[i].split('_')[1].split('.')[0]))
+        label_str=str(imgs[i].split('_')[1].split('.')[0]).decode('utf-8')
+        ids=np.empty(len(label_str),np.int32)
+        for j,char in enumerate(label_str):
+            CHAR_VOCABULARY, CHARS = vocabulary.GetCharacterVocabulary()
+            ids[j]=np.int32(CHAR_VOCABULARY[char])
+        # print(ids)
+        label.append(ids)
+    label=np.array(label)
+    # print(label)
     return data,label
+
+def load_datateststr():
+    data = np.empty((100,1,50,200),dtype="float32")
+    label = []
+    testfolder="/home/sanghy/Data/DL/train-tow"
+    imgs = os.listdir(testfolder)
+    num = len(imgs)
+    for i in range(num):
+        if (i >= 100):
+            break
+        rgbImage=Image.open(testfolder+"/"+imgs[i])
+        img = rgbImage.convert("L")
+        arr = np.asarray(img,dtype="float32")
+        data[i,:,:,:] = arr
+        label_str=str(imgs[i].split('_')[1].split('.')[0]).decode('utf-8')
+        ids=np.empty(len(label_str),np.str_)
+        for j,char in enumerate(label_str):
+            CHAR_VOCABULARY, CHARS = vocabulary.GetCharacterVocabulary()
+            ids[j]=np.int32(CHAR_VOCABULARY[char])
+        label.append(ids)
+    #label=np.array(label)
+    print(label)
+    return data,label
+
+load_datateststr()

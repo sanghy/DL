@@ -4,7 +4,7 @@ words = u'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789一二�
 def GetChar():
     return [v for i, v in enumerate(words)]
 
-def GetCharacterVocabulary(capital_included):
+def GetCharacterVocabulary():
   def GetChars(start_char, end_char):
       return [chr(i) for i in range(ord(start_char), ord(end_char) + 1)]
   #if capital_included:
